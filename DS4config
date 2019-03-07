@@ -1,0 +1,29 @@
+import struct, os
+import subprocess as sp
+# Open the file in the read-binary mode
+f = open( "/dev/input/js0", "rb" ); 
+desktop = 0
+while 1:
+	data = f.read(8)  # Reads the 8 bytes 
+	bytedata = struct.unpack('8b',data)
+	print bytedata
+	workspaces = sp.check_output(('wmctrl', '-d'))
+	workspaces = workspaces.split('\n')
+	workspaces = int(workspaces[len(workspaces)-2][0])
+	if bytedata[4:] == (1, 0, 1, 4): #first 3 are a timestamp i dont care about
+		if desktop == 0:
+			desktop = workspaces
+		else:
+			desktop -= 1
+		sp.call(["wmctrl", "-s", str(desktop)])
+	elif bytedata[4:] == (1, 0, 1, 5):
+		if desktop == workspaces:
+			desktop = 0
+		else:
+			desktop += 1
+		sp.call(["wmctrl", "-s", str(desktop)])
+	elif bytedata[4:] == (1, 0, 1, 1):
+		sp.call(["xkill"])
+	elif bytedata[4:] == (1, 0, 1, 0):
+		os.system("gnome-terminal")
+    
